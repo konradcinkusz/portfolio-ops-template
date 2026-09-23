@@ -1,0 +1,11 @@
+# Keeps the pinned versions current: a pull request each week when portfolio-ops or one of
+# the actions the workflow uses has a new release. Read the portfolio-ops CHANGELOG before
+# merging; the validate job runs on the pull request.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "engine"

@@ -1,0 +1,25 @@
+# portfolio-ops configuration. The vocabularies below belong to the fictional examples:
+# replace them with your own contexts and capabilities.
+schema_version: 1
+
+# There is no allow_public here on purpose: this repository lists your weak spots and
+# must stay private. portfolio-ops refuses to run on a public one (business rules §8.8).
+
+thresholds:
+  stale_days: 30         # an active product whose next action stands still longer is stale
+  actions_per_week: 1    # next actions you expect to finish in a week
+  wip_limit: 4           # at most this many active products (30 / 7 × 1 is about 4.3)
+  review_horizon_days:
+    paused: 60
+    dormant: 180
+  deferral_limit: 2      # this many defers since the next action last changed escalate
+
+vocabularies:
+  contexts: [website, app-store, grant-application, conference-talk]
+  capabilities: [tide-tables, offline-sync, plant-journal, reminders, maps, sharing]
+  finding_types: [name_check, metric]
+  decision_types: [external, rejection, rename, adoption]
+
+finding_ttl_days:
+  name_check: 180
+  metric: 30

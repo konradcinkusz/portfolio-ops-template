@@ -1,0 +1,7 @@
+# What portfolio-ops writes when you run it on your machine. The dashboard shows only what
+# this repository already holds, but it has no place in its history.
+dashboard.html
+portfolio-dashboard.html
+
+# A virtual environment, if you install portfolio-ops into one here.
+.venv/

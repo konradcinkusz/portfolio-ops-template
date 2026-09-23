@@ -1,0 +1,75 @@
+name: portfolio
+
+# The caller workflow of portfolio-ops (business rules §3): validate every push to main and
+# every pull request, and every Monday keep the weekly-review issue current and render the
+# dashboard.
+# portfolio-ops is pinned by the full commit SHA of a release, with its tag in a comment;
+# Dependabot proposes the next release as a pull request (.github/dependabot.yml).
+#
+# Every job skips konradcinkusz/portfolio-ops-template itself: the template is public and
+# holds only examples, and portfolio-ops refuses a public repository. In a repository
+# created from it, that condition is always true.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 7 * * 1"   # weekly review, Mondays 07:00 UTC
+  workflow_dispatch:
+
+jobs:
+  validate:
+    if: >-
+      github.repository != 'konradcinkusz/portfolio-ops-template'
+      && (github.event_name == 'push' || github.event_name == 'pull_request')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: konradcinkusz/portfolio-ops@383de89e3ff5ce956fbfc89904bde4d52a3e177b   # v0.3.0
+        with:
+          command: validate
+
+  report:
+    if: >-
+      github.repository != 'konradcinkusz/portfolio-ops-template'
+      && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: konradcinkusz/portfolio-ops@383de89e3ff5ce956fbfc89904bde4d52a3e177b   # v0.3.0
+        with:
+          command: report
+          publish: "true"
+
+  # The dashboard is a workflow artifact: only people who can read this repository can
+  # download it. Never publish it with GitHub Pages.
+  dashboard:
+    if: >-
+      github.repository != 'konradcinkusz/portfolio-ops-template'
+      && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: portfolio
+        uses: konradcinkusz/portfolio-ops@383de89e3ff5ce956fbfc89904bde4d52a3e177b   # v0.3.0
+        with:
+          command: dashboard
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a   # v7.0.1
+        with:
+          name: portfolio-dashboard
+          path: ${{ steps.portfolio.outputs.dashboard }}
+          retention-days: 7

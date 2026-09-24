@@ -80,7 +80,9 @@ The dashboard adds a Repositories panel with all of them. To set it up:
    tokens → Generate new token**.
    - **Resource owner:** your account.
    - **Expiration:** a date you will remember, for example a year ahead.
-   - **Repository access:** All repositories.
+   - **Repository access:** All repositories. GitHub preselects "Public repositories",
+     which leaves every private repository out; the weekly issue says so when that
+     happens.
    - **Permissions:** nothing to add; the read-only `Metadata` permission every token has
      is enough.
 2. In this repository, open **Settings → Secrets and variables → Actions → New repository
@@ -101,7 +103,7 @@ The gates and the lookup are for the moment you are about to act. Run them in a 
 this repository:
 
 ```bash
-pipx install git+https://github.com/konradcinkusz/portfolio-ops@v0.4.0
+pipx install git+https://github.com/konradcinkusz/portfolio-ops@v0.4.1
 portfolio-ops validate
 portfolio-ops gate <product> --context <context>    # may this external move go ahead?
 portfolio-ops idea-gate <idea>                      # does an existing product do this already?

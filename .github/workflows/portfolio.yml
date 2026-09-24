@@ -1,8 +1,9 @@
 name: portfolio
 
 # The caller workflow of portfolio-ops (business rules §3): validate every push to main and
-# every pull request, and every Monday keep the weekly-review issue current and render the
-# dashboard.
+# every pull request; every Monday keep the weekly-review issue current and render the
+# dashboard; and after every push to main, every Monday and on demand, commit the overview
+# to overview/.
 # portfolio-ops is pinned by the full commit SHA of a release, with its tag in a comment;
 # Dependabot proposes the next release as a pull request (.github/dependabot.yml).
 #
@@ -10,7 +11,7 @@ name: portfolio
 # holds only examples, and portfolio-ops refuses a public repository. In a repository
 # created from it, that condition is always true.
 #
-# The report and dashboard jobs also scan your GitHub account when the secret
+# The report, dashboard and overview jobs also scan your GitHub account when the secret
 # PORTFOLIO_ACCOUNT_TOKEN exists: a fine-grained, read-only token (README, "Scanning your
 # account"). Without it the input is empty and the account is not scanned. The validate
 # job, which runs on every pull request, never receives it.
@@ -35,7 +36,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
         with:
           fetch-depth: 0
-      - uses: konradcinkusz/portfolio-ops@92612f7ef726afcc55eb095767b55cdb31d440be   # v0.4.1
+      - uses: konradcinkusz/portfolio-ops@6446b52a973f42ebc8fb88a6c2699a13fb0d16c6   # v0.5.0
         with:
           command: validate
 
@@ -51,7 +52,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
         with:
           fetch-depth: 0
-      - uses: konradcinkusz/portfolio-ops@92612f7ef726afcc55eb095767b55cdb31d440be   # v0.4.1
+      - uses: konradcinkusz/portfolio-ops@6446b52a973f42ebc8fb88a6c2699a13fb0d16c6   # v0.5.0
         with:
           command: report
           publish: "true"
@@ -71,7 +72,7 @@ jobs:
         with:
           fetch-depth: 0
       - id: portfolio
-        uses: konradcinkusz/portfolio-ops@92612f7ef726afcc55eb095767b55cdb31d440be   # v0.4.1
+        uses: konradcinkusz/portfolio-ops@6446b52a973f42ebc8fb88a6c2699a13fb0d16c6   # v0.5.0
         with:
           command: dashboard
           account-token: ${{ secrets.PORTFOLIO_ACCOUNT_TOKEN }}
@@ -80,3 +81,67 @@ jobs:
           name: portfolio-dashboard
           path: ${{ steps.portfolio.outputs.dashboard }}
           retention-days: 7
+
+  # The overview: the whole portfolio as Markdown pages that GitHub renders in this
+  # repository, for the people who can read it (README, "The overview"). This job only
+  # reads; it hands the pages to the next job as an artifact of this run.
+  overview:
+    if: >-
+      github.repository != 'konradcinkusz/portfolio-ops-template'
+      && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: portfolio
+        uses: konradcinkusz/portfolio-ops@6446b52a973f42ebc8fb88a6c2699a13fb0d16c6   # v0.5.0
+        with:
+          command: overview
+          account-token: ${{ secrets.PORTFOLIO_ACCOUNT_TOKEN }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a   # v7.0.1
+        with:
+          name: portfolio-overview
+          path: ${{ steps.portfolio.outputs.overview }}
+          retention-days: 1
+
+  # The only job that can write to this repository. It runs no portfolio-ops code: it
+  # downloads the pages with GitHub's own gh and commits overview/ when they changed. A
+  # push made with the workflow's token starts no new run. If main moved on meanwhile, a
+  # newer run publishes the pages; a branch protection rule that forbids direct pushes to
+  # main fails this job, and the pages stay an artifact of the run.
+  publish-overview:
+    needs: overview
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    concurrency:
+      group: publish-overview
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+      - name: Commit the overview when it changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          pages="$RUNNER_TEMP/portfolio-overview"
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name portfolio-overview --dir "$pages"
+          rm -rf overview && mkdir overview && cp "$pages"/*.md overview/
+          git add --all overview
+          if git diff --cached --quiet; then echo "The overview is current."; exit 0; fi
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit --quiet -m "Update the portfolio overview"
+          if ! git push --quiet origin "HEAD:$BRANCH"; then
+            # Refused. If the branch moved on while the pages were rendered, a newer run
+            # publishes them; any other refusal fails the job.
+            git fetch --quiet origin "$BRANCH"
+            if git merge-base --is-ancestor FETCH_HEAD HEAD^; then exit 1; fi
+            echo "::notice title=portfolio-ops::$BRANCH moved on while the pages were rendered; a newer run publishes them"
+          fi

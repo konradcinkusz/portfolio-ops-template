@@ -3,9 +3,9 @@
 This repository holds one person's portfolio of side projects as data: what is in
 progress, what waits and until when, what was decided and what was verified.
 [portfolio-ops](https://github.com/konradcinkusz/portfolio-ops) checks it on every push,
-keeps one weekly-review issue current, and renders a dashboard you download from the
-workflow run. With a read-only token it also scans your GitHub account, and names the
-repositories you worked on outside the plan.
+keeps one weekly-review issue current, and keeps an overview of the whole portfolio in
+`overview/`: pages GitHub renders here, with charts. With a read-only token it also scans
+your GitHub account, and names the repositories you worked on outside the plan.
 
 ## Creating your repository from this template
 
@@ -57,24 +57,48 @@ The format, and what every rule checks, is in the
     overdue or unrecorded, and closes the issue when nothing is.
   - `dashboard` renders the whole portfolio as one page, kept as the workflow artifact
     `portfolio-dashboard` for seven days. **Never publish it with GitHub Pages.**
+- **After every push to `main`, every Monday, and on demand:** `overview` renders the
+  whole portfolio as Markdown pages, and a second job commits them to `overview/` when
+  they changed (see [The overview](#the-overview)).
 
 The workflow pins portfolio-ops to a release by its full commit SHA. Dependabot opens a
 pull request when a new release comes out: read its
 [changelog](https://github.com/konradcinkusz/portfolio-ops/blob/main/CHANGELOG.md), and
 merge once `validate` passes.
 
+## The overview
+
+The weekly issue lists only what needs you. For the whole picture, open
+`overview/README.md` — on the web or in GitHub's mobile app. The workflow writes it after
+its first run on `main`, and the weekly issue links it:
+
+| Page | Holds |
+|---|---|
+| `README.md` | the numbers at a glance, what needs attention, this week's focus and next actions, where the week's work went, the latest decisions |
+| `products.md` | every product by status and every kernel, with the review dates on a timeline |
+| `repositories.md` | your account's repositories, those you worked on this week first |
+| `risks.md` | the risks, the findings and the copy-paste debt |
+| `decisions.md` | every decision, newest first, with its text |
+
+The pages are generated: edit the data files, never `overview/`, and the workflow
+rewrites them. Only people who can read this repository can see them; keep it private.
+The job that commits them is the only one that can write here, runs none of
+portfolio-ops' code and touches nothing but `overview/`. If you protect `main` against
+direct pushes, that job fails, and the pages stay an artifact of the run.
+
 ## Scanning your account
 
 The workflow's own token sees only this repository. With a second, read-only token, the
-report and dashboard jobs also scan your GitHub account. They find every repository you own
-and which of them **you** pushed to since the same weekday last week; pushes by Dependabot
-or other bots do not count. The weekly issue then names:
+report, dashboard and overview jobs also scan your GitHub account. They find every
+repository you own and which of them **you** pushed to since the same weekday last week;
+pushes by Dependabot or other bots do not count. The weekly issue then names:
 
 - repositories you worked on that no product or kernel lists;
 - products that are not active, but were worked on;
 - repositories your `repos` lists that the account does not have.
 
-The dashboard adds a Repositories panel with all of them. To set it up:
+The dashboard and the overview list all of them, with the product or kernel each one
+belongs to. To set it up:
 
 1. On GitHub, open **Settings → Developer settings → Personal access tokens → Fine-grained
    tokens → Generate new token**.
@@ -103,7 +127,7 @@ The gates and the lookup are for the moment you are about to act. Run them in a 
 this repository:
 
 ```bash
-pipx install git+https://github.com/konradcinkusz/portfolio-ops@v0.4.1
+pipx install git+https://github.com/konradcinkusz/portfolio-ops@v0.5.0
 portfolio-ops validate
 portfolio-ops gate <product> --context <context>    # may this external move go ahead?
 portfolio-ops idea-gate <idea>                      # does an existing product do this already?

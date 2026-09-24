@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
         with:
           fetch-depth: 0
-      - uses: konradcinkusz/portfolio-ops@d196c9d4570fdd9f517690ab56fd04846a8c7732   # v0.4.0
+      - uses: konradcinkusz/portfolio-ops@92612f7ef726afcc55eb095767b55cdb31d440be   # v0.4.1
         with:
           command: validate
 
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
         with:
           fetch-depth: 0
-      - uses: konradcinkusz/portfolio-ops@d196c9d4570fdd9f517690ab56fd04846a8c7732   # v0.4.0
+      - uses: konradcinkusz/portfolio-ops@92612f7ef726afcc55eb095767b55cdb31d440be   # v0.4.1
         with:
           command: report
           publish: "true"
@@ -71,7 +71,7 @@ jobs:
         with:
           fetch-depth: 0
       - id: portfolio
-        uses: konradcinkusz/portfolio-ops@d196c9d4570fdd9f517690ab56fd04846a8c7732   # v0.4.0
+        uses: konradcinkusz/portfolio-ops@92612f7ef726afcc55eb095767b55cdb31d440be   # v0.4.1
         with:
           command: dashboard
           account-token: ${{ secrets.PORTFOLIO_ACCOUNT_TOKEN }}

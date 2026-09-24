@@ -9,6 +9,11 @@ name: portfolio
 # Every job skips konradcinkusz/portfolio-ops-template itself: the template is public and
 # holds only examples, and portfolio-ops refuses a public repository. In a repository
 # created from it, that condition is always true.
+#
+# The report and dashboard jobs also scan your GitHub account when the secret
+# PORTFOLIO_ACCOUNT_TOKEN exists: a fine-grained, read-only token (README, "Scanning your
+# account"). Without it the input is empty and the account is not scanned. The validate
+# job, which runs on every pull request, never receives it.
 
 on:
   push:
@@ -30,7 +35,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
         with:
           fetch-depth: 0
-      - uses: konradcinkusz/portfolio-ops@383de89e3ff5ce956fbfc89904bde4d52a3e177b   # v0.3.0
+      - uses: konradcinkusz/portfolio-ops@d196c9d4570fdd9f517690ab56fd04846a8c7732   # v0.4.0
         with:
           command: validate
 
@@ -46,10 +51,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
         with:
           fetch-depth: 0
-      - uses: konradcinkusz/portfolio-ops@383de89e3ff5ce956fbfc89904bde4d52a3e177b   # v0.3.0
+      - uses: konradcinkusz/portfolio-ops@d196c9d4570fdd9f517690ab56fd04846a8c7732   # v0.4.0
         with:
           command: report
           publish: "true"
+          account-token: ${{ secrets.PORTFOLIO_ACCOUNT_TOKEN }}
 
   # The dashboard is a workflow artifact: only people who can read this repository can
   # download it. Never publish it with GitHub Pages.
@@ -65,9 +71,10 @@ jobs:
         with:
           fetch-depth: 0
       - id: portfolio
-        uses: konradcinkusz/portfolio-ops@383de89e3ff5ce956fbfc89904bde4d52a3e177b   # v0.3.0
+        uses: konradcinkusz/portfolio-ops@d196c9d4570fdd9f517690ab56fd04846a8c7732   # v0.4.0
         with:
           command: dashboard
+          account-token: ${{ secrets.PORTFOLIO_ACCOUNT_TOKEN }}
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a   # v7.0.1
         with:
           name: portfolio-dashboard
